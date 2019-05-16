@@ -1,0 +1,30 @@
+[[constraint]]
+name = "github.com/FuzzyStatic/blizzard"
+
+[[contraint]]
+name = "github.com/jinzhu/gorm"
+
+[[constraint]]
+name = "github.com/gorilla/mux"
+
+[[contraint]]
+name = "github.com/ccod/go-bnet"
+
+[[constraint]]
+name = "github.com/dgjrijalva/jwt-go"
+
+[[contraint]]
+name = "golang.org/x/oauth2"
+
+[[contraint]]
+name = "github.com/lib/pq"
+
+[[constraint]]
+name = "github.com/rs/cors"
+
+[[constraint]]
+name = "github.com/joho/godotenv"
+
+[[contraint]]
+name = "github.com/mattn/go-sqlite3"
+;; this is more for tests
