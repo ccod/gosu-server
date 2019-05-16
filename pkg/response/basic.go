@@ -18,3 +18,16 @@ func RespondJSON(i interface{}, w http.ResponseWriter, r *http.Request) {
 
 	w.Write(j)
 }
+
+// RespondError takes and error and writes a json map with error inside as well as the 500 status code
+func RespondError(err error, w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Header().Set("Content-type", "application/json")
+	d := map[string]string{
+		"status": "500",
+		"error":  err.Error(),
+	}
+
+	j, _ := json.Marshal(d)
+	w.Write(j)
+}

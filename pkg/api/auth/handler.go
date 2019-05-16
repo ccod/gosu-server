@@ -5,7 +5,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/FuzzyStatic/blizzard"
+	"github.com/ccod/gosu-server/pkg/client"
+	m "github.com/ccod/gosu-server/pkg/middleware"
+	"github.com/ccod/gosu-server/pkg/models"
+	re "github.com/ccod/gosu-server/pkg/response"
+
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
 	"golang.org/x/oauth2"
 
 	"github.com/ccod/go-bnet"
@@ -18,15 +25,8 @@ func login(oauthCfg *oauth2.Config, authSecret string) http.HandlerFunc {
 	}
 }
 
-func bnetCB(oauthCfg *oauth2.Config, authSecret string, jwtSecret string) http.HandlerFunc {
+func bnetCB(oauthCfg *oauth2.Config, jwtSecret string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		state := r.FormValue("state")
-		if state != authSecret {
-			fmt.Printf("invalid oauth state expected '%s', go '%s'\n", authSecret, state)
-			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-			return
-		}
-
 		code := r.FormValue("code")
 		token, err := oauthCfg.Exchange(oauth2.NoContext, code)
 		if err != nil {
@@ -63,4 +63,31 @@ func bnetCB(oauthCfg *oauth2.Config, authSecret string, jwtSecret string) http.H
 		// will pass client domain as part of tools I think...
 		http.Redirect(w, r, "http://localhost:3000/callback#"+tokenString, http.StatusTemporaryRedirect)
 	}
+}
+
+func getUser(w http.ResponseWriter, r *http.Request) {
+	db := r.Context().Value(m.DBKey).(*gorm.DB)
+	accID := r.Context().Value(m.JWTKey).(int)
+
+	var user models.Player
+	db.First(&user, accID)
+
+	if user.AccountID != 0 {
+		re.RespondJSON(user, w, r)
+		return
+	}
+
+	// Since Player record does not already exist in DB (first time login), will call on client to do the initial Fetch
+	blizz := r.Context().Value(m.BlizzKey).(*blizzard.Client)
+	blizz.TokenValidation()
+
+	user, err := client.FetchNewPlayer(blizz, accID)
+	if err != nil {
+		re.RespondError(err, w, r)
+		return
+	}
+
+	// should move this to player model
+	db.Create(&user)
+	re.RespondJSON(user, w, r)
 }

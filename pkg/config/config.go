@@ -64,6 +64,7 @@ func LoadFromEnv() Settings {
 		panic("db connection returned with an error")
 	}
 
+	// going to fix the redirect url, as the deployment target won't need to incorporate a port in the uri
 	s.Tools = Tools{
 		DB:    db,
 		Blizz: blizzard.NewClient(blizzClientID, blizzClientSecret, blizzard.US, blizzard.Locale("enUS")),
@@ -71,7 +72,7 @@ func LoadFromEnv() Settings {
 			ClientID:     blizzClientID,
 			ClientSecret: blizzClientSecret,
 			Scopes:       []string{"sc2.profile"},
-			RedirectURL:  s.ClientDomain + "/bnet_oauth_cb",
+			RedirectURL:  s.Domain + ":" + s.Port + "/auth/bnet_oauth_cb",
 			Endpoint:     bnet.Endpoint("us"),
 		},
 

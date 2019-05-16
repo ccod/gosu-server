@@ -25,13 +25,13 @@ func main() {
 
 	if command == "up" {
 		fmt.Println("called the up command")
-		db.AutoMigrate(&models.Todo{})
+		db.AutoMigrate(&models.Todo{}, &models.Player{}, &models.Challenge{}, &models.History{})
 		return
 	}
 
 	if command == "down" {
 		fmt.Println("called the down command")
-		db.DropTable(&models.Todo{})
+		db.DropTable(&models.Todo{}, &models.Player{}, &models.Challenge{}, &models.History{})
 		return
 	}
 
