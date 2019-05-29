@@ -70,7 +70,7 @@ func queueChallengeResolution(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	challenge := models.QueueChallengeResolution(db, id, i["resolutionDate"].(int))
+	challenge := models.QueueChallengeResolution(db, id, i["resolutionDate"].(int64))
 	re.RespondJSON(challenge, w, r)
 }
 

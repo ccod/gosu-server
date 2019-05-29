@@ -1,17 +1,20 @@
 package models
 
 import (
+	"time"
+
 	"github.com/jinzhu/gorm"
 )
 
 // History will refer to Match History, this is a straight pull from api
+// TODO: think about adding a Player struct to type
 type History struct {
 	gorm.Model
-	PlayerID  int
-	Map       string
-	Type      string
-	Decision  string
-	MatchDate int // will use a date type
+	PlayerID  int       `json:"playerId"`
+	Map       string    `json:"map"`
+	Type      string    `json:"type"`
+	Decision  string    `json:"decision"`
+	MatchDate time.Time `json:"matchDate"` // will use a date type
 }
 
 // ListHistoryByPlayer returns a full accounting of a player's match history
@@ -35,7 +38,7 @@ func AppendHistory(db *gorm.DB, id int, newHistory []History) {
 	db.Where("player_id = ?", id).Order("match_date desc").First(&lastMatch)
 
 	for i := 0; i < len(newHistory); i++ {
-		if newHistory[i].MatchDate > lastMatch.MatchDate {
+		if newHistory[i].MatchDate.After(lastMatch.MatchDate) {
 			db.Create(&newHistory[i])
 		}
 	}
@@ -45,12 +48,15 @@ func AppendHistory(db *gorm.DB, id int, newHistory []History) {
 // looking at the history of both players between the resolutionTime and 3 hours prior,
 // selecting challenger history rows where both have the same match_date and type,
 // taking the 3 most recent and counting successes from the challenger's point of view
-func AdjudicateContest(db *gorm.DB, challengerID int, defenderID int, resolutionTime int) bool {
+func AdjudicateContest(db *gorm.DB, challengerID int, defenderID int, rawResolutionTime int64) bool {
 	var challengerHistory []History
+	resolutionTime := time.Unix(rawResolutionTime, 0)
+	threeHoursBefore := resolutionTime.Add(-3 * time.Hour)
+
 	// TODO: fix resolutionTime interval
 	db.Where(
-		"match_date between ? and ? and type = 'melee' and player_id = ? and match_date in (?)", resolutionTime, resolutionTime-60*3, challengerID,
-		db.Table("histories").Select("match_date").Where("match_date between ? and ? and type = 'melee' and player_id = ?", resolutionTime, resolutionTime-60*3, defenderID).QueryExpr(),
+		"match_date between ? and ? and type = 'melee' and player_id = ? and match_date in (?)", resolutionTime, threeHoursBefore, challengerID,
+		db.Table("histories").Select("match_date").Where("match_date between ? and ? and type = '1v1' and player_id = ?", resolutionTime, threeHoursBefore, defenderID).QueryExpr(),
 	).Order("match_date desc").Limit(3).Find(&challengerHistory)
 
 	success := 0

@@ -1,15 +1,19 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // Challenge is the crux of the purpose of this application, with respect to internal clan ladder
+// TODO: think about having a place holder for Player struct for challenger and defender
 type Challenge struct {
 	gorm.Model
-	IssueDate      string
-	Challenger     int
-	Defender       int
-	Decision       string // prefer an enum [undecided, success, failure] with respect to Challenger
-	ResolutionDate int    // TODO: Make this time.Time and comparable to History.MatchDate
+	Challenger     int       `json:"challenger"`
+	Defender       int       `json:"defender"`
+	Decision       string    `gorm:"default:undecided" json:"decision"` // prefer an enum [undecided, success, failure] with respect to Challenger
+	ResolutionDate time.Time `json:"resolutionDate"`                    // TODO: Make this time.Time and comparable to History.MatchDate
 }
 
 // ListChallengesByPlayer returns a list of challenges as both challenger and defender
@@ -84,10 +88,10 @@ func DecideChallenge(db *gorm.DB, id int, verdict bool) Challenge {
 
 // QueueChallengeResolution sets a timestamp at the end of the contest indicating roughly when the competition was settled
 // need to change issueDate, and resolutionDate to Time.time and validate string
-func QueueChallengeResolution(db *gorm.DB, id int, t int) Challenge {
+func QueueChallengeResolution(db *gorm.DB, id int, t int64) Challenge {
 	var challenge Challenge
 	db.First(&challenge, id)
-	challenge.ResolutionDate = t
+	challenge.ResolutionDate = time.Unix(t, 0)
 	db.Save(&challenge)
 
 	return challenge
